@@ -50,6 +50,21 @@ def xor_with_key(input, key):
     return bytes(output)
 
 
+def hamming(a, b):
+    """
+    Calculates the edit distance / hamming distance of two input streams a and b
+    :param a: bytes()
+    :param b: bytes()
+    :return: int()
+    """
+    assert len(a) == len(b)
+    c = Counter()
+    distances = (x ^ y for x, y in zip(a, b))
+    for x in distances:
+        c.update(bin(x).lstrip('0b'))
+    return c['1']
+
+
 class TestSet1(unittest.TestCase):
     def test_hex2base64(self):
         self.assertEquals(hex2base64(
@@ -81,6 +96,11 @@ class TestSet1(unittest.TestCase):
         input = b"""Burning 'em, if you ain't quick and nimble
 I go crazy when I hear a cymbal"""
         output = binascii.unhexlify("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272"
-                                  "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
+                                    "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
         key = b'ICE'
         self.assertEquals(output, xor_with_key(input, key))
+
+    def test_hamming(self):
+        a = b"this is a test"
+        b = b"wokka wokka!!!"
+        self.assertEquals(hamming(a, b), 37)
