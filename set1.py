@@ -42,6 +42,13 @@ def english_freq(input):
     return res if res else None
 
 
+def xor_with_key(input, key):
+    output = bytearray()
+    for i, c in enumerate(input):
+        key_idx = i % len(key)
+        output.append(key[key_idx] ^ c)
+    return bytes(output)
+
 
 class TestSet1(unittest.TestCase):
     def test_hex2base64(self):
@@ -70,4 +77,10 @@ class TestSet1(unittest.TestCase):
         self.assertEqual(len(results), 1)
         logger.warn('Decrypted: {}'.format(results[0]))
 
-
+    def test_challenge_5(self):
+        input = b"""Burning 'em, if you ain't quick and nimble
+I go crazy when I hear a cymbal"""
+        output = binascii.unhexlify("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272"
+                                  "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
+        key = b'ICE'
+        self.assertEquals(output, xor_with_key(input, key))
