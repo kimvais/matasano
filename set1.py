@@ -39,11 +39,9 @@ def challenge_6():
                 break
 
         if len(key_ints) == keysize:
-            print('Decrypted:')
-            print(xor_with_key(data, bytes(key_ints)).decode('ascii'))
-            return
+            return xor_with_key(data, bytes(key_ints))
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARNING)
-    challenge_6()
+    print(challenge_6())

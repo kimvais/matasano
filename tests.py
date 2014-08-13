@@ -1,6 +1,9 @@
+from base64 import b64decode
 import unittest
 import binascii
 import logging
+import aes
+from set1 import challenge_6
 
 from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into
 logger = logging.getLogger(__name__)
@@ -8,6 +11,11 @@ __author__ = 'kimvais'
 
 
 class TestSet1(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with open('plaintext.txt') as f:
+            cls.plaintext = f.read().encode('ascii')
+
     def test_hex2base64(self):
         self.assertEquals(hex2base64(
             '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d'),
@@ -54,3 +62,16 @@ I go crazy when I hear a cymbal"""
 
     def test_chunking(self):
         self.assertEquals(chunk_into('foobarx', 3), ['foo', 'bar', 'x'])
+
+    def test_aes_ecb(self):
+        cipher = aes.ECB(b'YELLOW SUBMARINE')
+        with open('7.txt') as f:
+            data = b64decode(f.read())
+        self.assertEquals(cipher.decrypt(data), self.plaintext)
+
+    def test_challenge_6(self):
+        self.assertEqual(self.plaintext, challenge_6())
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    TestSet1().test_aes_ecb()
