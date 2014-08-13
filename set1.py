@@ -21,18 +21,25 @@ def xorwith(input, key):
     return '{:0x}'.format(int(input, 16) ^ int(key, 16))
 
 
+def xorwith_char(data, char):
+    output = bytes(bytearray((a ^ char) for a in data))
+    return output
+
+
 def english_freq(input):
-    FREQ = 'ETAOIN SHRDLU'
-    MSG_CHARS = string.ascii_letters + string.digits + '.,- '
+    FREQ = [ord(x) for x in 'ETAOIN SHRDLU']
+    MSG_CHARS = string.ascii_uppercase + string.digits + ".,- '"
     data = binascii.unhexlify(input)
     freqs = Counter(data)
     most_common = (x[0] for x in freqs.most_common(13))
     translation_table = itertools.product(FREQ, most_common)
+    res = list()
     for x, y in translation_table:
-        xorwith1 = xorwith(input, len(data) * '{:x}'.format(ord(x) ^ y))
-        output = binascii.unhexlify(xorwith1)
-        if all(chr(c) in MSG_CHARS for c in output):
-            return output
+        char = x ^ y
+        output = xorwith_char(data, char)
+        if all(chr(c) in MSG_CHARS for c in output.upper()):
+            res.append(output)
+    return res
 
 
 
