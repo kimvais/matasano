@@ -5,7 +5,8 @@ import logging
 import aes
 from set1 import challenge_6
 
-from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into
+from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into, pkcs7pad
+
 logger = logging.getLogger(__name__)
 __author__ = 'kimvais'
 
@@ -33,7 +34,7 @@ class TestSet1(unittest.TestCase):
         self.assertIsNotNone(candidate)
         logger.info('Decrypted: {}'.format(candidate))
 
-    def test_4(self):
+    def test_challenge_4(self):
         results = list()
         with open('4.txt') as f:
             for line in f:
@@ -63,7 +64,7 @@ I go crazy when I hear a cymbal"""
     def test_chunking(self):
         self.assertEquals(chunk_into('foobarx', 3), ['foo', 'bar', 'x'])
 
-    def test_aes_ecb(self):
+    def test_challenge_7_aes_ecb(self):
         cipher = aes.ECB(b'YELLOW SUBMARINE')
         with open('7.txt') as f:
             data = b64decode(f.read())
@@ -71,6 +72,15 @@ I go crazy when I hear a cymbal"""
 
     def test_challenge_6(self):
         self.assertEqual(self.plaintext, challenge_6())
+
+class TestSet2(unittest.TestCase):
+    def test_challenge_1(self):
+        """
+        PKCS#7 padding
+        """
+        input = b'YELLOW SUBMARINE'
+        output = b'YELLOW SUBMARINE\x04\x04\x04\x04'
+        self.assertEqual(pkcs7pad(input, 20), output)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

@@ -2,6 +2,7 @@ import base64
 from collections import Counter
 import string
 import logging
+
 import math
 
 import binascii
@@ -104,3 +105,9 @@ def chunk_into(data, size):
     for i in range(math.ceil(len(data) / size)):
         ret.append(data[i * size:(i + 1) * size])
     return ret
+
+
+def pkcs7pad(data, blocksize):
+    assert isinstance(data, bytes)
+    padlen = blocksize - len(data) % blocksize
+    return data + padlen * bytes((padlen,))

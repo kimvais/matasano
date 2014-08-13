@@ -42,6 +42,23 @@ def challenge_6():
             return xor_with_key(data, bytes(key_ints))
 
 
+def challenge_8():
+    with open('8.txt') as f:
+        candidates = (base64.b64decode(x) for x in f.readlines())
+    best = None
+    for candidate in candidates:
+        chunks = chunk_into(candidate, 16)
+        unique_chunks = len(set(chunks))
+        if best is None:
+            score = unique_chunks
+            best = candidate
+        elif unique_chunks < score:
+            best = candidate
+            score = unique_chunks
+        logger.debug(unique_chunks)
+    return best, score
+
+
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.WARNING)
-    print(challenge_6())
+    logging.basicConfig(level=logging.DEBUG)
+    print(challenge_8())
