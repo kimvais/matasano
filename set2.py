@@ -1,3 +1,4 @@
+from base64 import b64decode
 import logging
 
 import math
@@ -25,10 +26,10 @@ def challenge_11():
         print(analyze(plain, chunk_count))
 
 
-def detect_blocksize():
+def detect_blocksize(suffix):
     for i in range(3, 65):
         plain = b'A' * 64
-        cipher = deterministic_oracle(plain)
+        cipher = deterministic_oracle(plain, suffix)
         chunks = chunk_into(cipher, i)
         if chunks[0] == chunks[1]:
             logger.info('Block size = {}'.format(i))
@@ -36,13 +37,15 @@ def detect_blocksize():
 
 
 def challenge_12():
-    blocksize = detect_blocksize()
+    with open('12.txt') as f:
+        suffix = b64decode(f.read())
+    blocksize = detect_blocksize(suffix)
     x = 2 * blocksize * b'A'
-    ciphertext = deterministic_oracle(x)
+    ciphertext = deterministic_oracle(x, suffix)
     chunks = chunk_into(ciphertext, blocksize)
     if len(chunks) > len(set(chunks)):
         logger.info("Cipher is running in ECB mode")
-    datalen = len(deterministic_oracle(b''))
+    datalen = len(deterministic_oracle(b'', suffix))
     logger.critical(datalen)
     known = list()
     for offset in range(1, datalen):
@@ -51,9 +54,9 @@ def challenge_12():
         for c in range(256):
             char = bytes((c,))
             plain = padder + b''.join(known) + char
-            logger.debug(plain)
-            rtable[deterministic_oracle(plain)[:datalen]] = char
-        ciphertext = deterministic_oracle(padder)
+            # logger.debug(plain)
+            rtable[deterministic_oracle(plain, suffix)[:datalen]] = char
+        ciphertext = deterministic_oracle(padder, suffix)
         try:
             known.append(rtable[ciphertext[:datalen]])
         except KeyError:

@@ -104,8 +104,9 @@ class TestSet2(unittest.TestCase):
         self.assertEqual(d.decrypt(x), b'foobar' * 123)
 
     def test_challenge_12(self):
+        with open('12.txt') as f:
+            plaintext = b64decode(f.read())
         cracked = challenge_12()
-        plaintext = aes.SUFFIX
         self.assertEqual(cracked, plaintext)
 
 if __name__ == '__main__':

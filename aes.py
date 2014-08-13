@@ -7,11 +7,6 @@ from cryptography.hazmat.backends import default_backend
 
 from tools import chunk_into, xor_with_key, pkcs7pad, unpad
 
-SUFFIX = b64decode("""Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
-aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
-dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
-YnkK""")
-
 class ECB(object):
     def __init__(self, key):
         self.cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
@@ -66,6 +61,6 @@ def encryption_oracle(input):
     return cipher.encrypt(plain)
 
 
-def deterministic_oracle(input):
+def deterministic_oracle(input, suffix):
     key = b'YELLOW SUBMARINE'
-    return (ECB(key).encrypt(input + SUFFIX))
+    return (ECB(key).encrypt(input + suffix))
