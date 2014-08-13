@@ -111,3 +111,6 @@ def pkcs7pad(data, blocksize):
     assert isinstance(data, bytes)
     padlen = blocksize - len(data) % blocksize
     return data + padlen * bytes((padlen,))
+
+def unpad(plain):
+    return plain[:-plain[-1]]

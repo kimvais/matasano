@@ -5,18 +5,18 @@ import logging
 import aes
 from set1 import challenge_6
 
-from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into, pkcs7pad
+from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into, pkcs7pad, unpad
+
+KEY = b'YELLOW SUBMARINE'
+
+with open('plaintext.txt') as f:
+    PLAINTEXT = f.read().encode('ascii')
 
 logger = logging.getLogger(__name__)
 __author__ = 'kimvais'
 
 
 class TestSet1(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        with open('plaintext.txt') as f:
-            cls.plaintext = f.read().encode('ascii')
-
     def test_hex2base64(self):
         self.assertEquals(hex2base64(
             '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d'),
@@ -65,22 +65,34 @@ I go crazy when I hear a cymbal"""
         self.assertEquals(chunk_into('foobarx', 3), ['foo', 'bar', 'x'])
 
     def test_challenge_7_aes_ecb(self):
-        cipher = aes.ECB(b'YELLOW SUBMARINE')
+        cipher = aes.ECB(KEY)
         with open('7.txt') as f:
             data = b64decode(f.read())
-        self.assertEquals(cipher.decrypt(data), self.plaintext)
+        self.assertEquals(unpad(cipher.decrypt(data)), PLAINTEXT)
 
     def test_challenge_6(self):
-        self.assertEqual(self.plaintext, challenge_6())
+        self.assertEqual(PLAINTEXT, challenge_6())
 
 class TestSet2(unittest.TestCase):
-    def test_challenge_1(self):
+    def test_challenge_9(self):
         """
         PKCS#7 padding
         """
-        input = b'YELLOW SUBMARINE'
-        output = b'YELLOW SUBMARINE\x04\x04\x04\x04'
+        input = KEY
+        output = KEY + b'\x04\x04\x04\x04'
         self.assertEqual(pkcs7pad(input, 20), output)
+
+    def test_challenge_10_ecb(self):
+        e = aes.ECB(KEY)
+        plaintext = b'x' * 16
+        ciphertext = e.encrypt(plaintext)
+        self.assertEqual(plaintext, e.decrypt(ciphertext))
+
+    def test_challenge_10_cbc(self):
+        with open('10.txt') as f:
+            data = b64decode(f.read())
+        c = aes.CBC(KEY, b'\x00' * 16)
+        self.assertEqual(unpad(c.decrypt(data)), PLAINTEXT)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
