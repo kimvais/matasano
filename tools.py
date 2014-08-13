@@ -112,5 +112,28 @@ def pkcs7pad(data, blocksize):
     padlen = blocksize - len(data) % blocksize
     return data + padlen * bytes((padlen,))
 
+
 def unpad(plain):
     return plain[:-plain[-1]]
+
+
+class UserProfile(dict):
+    def __init__(self, d):
+        super().__init__()
+        self.__dict__ = self
+        for k, v in d.items():
+            if not isinstance(v, (bytes, int)):
+                v = v.encode('ascii')
+            self[k] = v
+
+    def serialize(self):
+        return b'email=' + self.email + '&uid={}'.format(self.uid).encode('ascii') + b'&role=' + self.role
+
+
+
+
+
+
+
+
+

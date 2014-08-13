@@ -5,7 +5,7 @@ import logging
 import binascii
 import aes
 from set1 import challenge_6
-from set2 import challenge_12
+from set2 import challenge_12, kvparse, profile_for, parse_profile
 from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into, pkcs7pad, unpad
 
 
@@ -108,6 +108,18 @@ class TestSet2(unittest.TestCase):
             plaintext = b64decode(f.read())
         cracked = challenge_12()
         self.assertEqual(cracked, plaintext)
+
+    def test_challenge13_kvparse(self):
+        input = b'foo=bar&baz=qux&zap=zazzle'
+        o = kvparse(input)
+        self.assertEqual(o.foo, 'bar')
+        self.assertEqual(o.baz, 'qux')
+        self.assertEqual(o.zap, 'zazzle')
+
+    def test_challenge13_profile_for(self):
+        profile = profile_for("foo@bar.com")
+        self.assertRaises(ValueError, profile_for, 'email=foo&role=admin')
+        self.assertEqual(parse_profile(profile).email, 'foo@bar.com')
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

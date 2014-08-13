@@ -1,9 +1,10 @@
 from base64 import b64decode
+import base64
 import logging
 
 import math
-from aes import encryption_oracle, deterministic_oracle
-from tools import chunk_into, unpad
+from aes import encryption_oracle, deterministic_oracle, ECB
+from tools import chunk_into, unpad, UserProfile, pkcs7pad
 
 
 __author__ = 'kimvais'
@@ -60,10 +61,51 @@ def challenge_12():
         try:
             known.append(rtable[ciphertext[:datalen]])
         except KeyError:
-            return(unpad(b''.join(known)))
+            return (unpad(b''.join(known)))
+
+
+def kvparse(input):
+    d = dict(x.split(b'=') for x in input.split(b'&'))
+    return UserProfile(d)
+
+
+def profile_for(email):
+    if not isinstance(email, bytes):
+        email = email.encode('ascii')
+    key = base64.b64decode(b'XJeZGgXzH89F0q1vTJfTgw==')
+    if b'&' in email or b'=' in email:
+        raise ValueError("Invalid e-mail {}".format(email))
+    else:
+        s = UserProfile(dict(email=email, uid=10, role='user')).serialize()
+        assert s is not None
+        return ECB(key).encrypt(s)
+
+
+def parse_profile(ciphertext):
+    key = base64.b64decode(b'XJeZGgXzH89F0q1vTJfTgw==')
+    plaintext = unpad(ECB(key).decrypt(ciphertext))
+    logger.critical(plaintext)
+    return kvparse(plaintext)
+
+
+def challenge_13():
+    min_len = len(profile_for(''))
+    for i in range(16):
+        if len(profile_for('x' * i)) > min_len:
+            break
+    spacing = i
+    chunks = chunk_into(profile_for(spacing * b'x' + pkcs7pad(b'admin', 16)), 16)
+    cut = chunk_into(profile_for(spacing * b'x' + pkcs7pad(b'user', 16)), 16)[1]
+    paste = chunks[1]
+    for i in range(16):
+        chunks = chunk_into(profile_for(i * b'x'), 16)
+        if chunks[-1] == cut:
+            chunks[-1] = paste
+            return parse_profile(b''.join(chunks)).items()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     # challenge_11()
-    print(challenge_12())
+    # print(challenge_12())
+    print(challenge_13())
