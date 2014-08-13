@@ -103,9 +103,11 @@ def challenge_13():
             chunks[-1] = paste
             return parse_profile(b''.join(chunks)).items()
 
+def challenge_14():
+    raise NotImplemented("TODO")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    # challenge_11()
-    # print(challenge_12())
+    print(challenge_11())
+    print(challenge_12())
     print(challenge_13())

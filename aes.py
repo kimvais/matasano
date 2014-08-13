@@ -1,4 +1,3 @@
-from base64 import b64decode
 import random
 import os
 
@@ -6,6 +5,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
 from tools import chunk_into, xor_with_key, pkcs7pad, unpad
+
 
 class ECB(object):
     def __init__(self, key):
@@ -64,3 +64,9 @@ def encryption_oracle(input):
 def deterministic_oracle(input, suffix):
     key = b'YELLOW SUBMARINE'
     return (ECB(key).encrypt(input + suffix))
+
+
+def c14_oracle(input):
+    key = b'YELLOW SUBMARINE'
+    prefix = os.urandom(random.randint(1, 32))
+    return ECB(key).encrypt(prefix + input + 'password:panssari-vaunu')

@@ -109,17 +109,15 @@ class TestSet2(unittest.TestCase):
         cracked = challenge_12()
         self.assertEqual(cracked, plaintext)
 
-    def test_challenge13_kvparse(self):
-        input = b'foo=bar&baz=qux&zap=zazzle'
-        o = kvparse(input)
-        self.assertEqual(o.foo, 'bar')
-        self.assertEqual(o.baz, 'qux')
-        self.assertEqual(o.zap, 'zazzle')
-
     def test_challenge13_profile_for(self):
         profile = profile_for("foo@bar.com")
         self.assertRaises(ValueError, profile_for, 'email=foo&role=admin')
-        self.assertEqual(parse_profile(profile).email, 'foo@bar.com')
+        #self.assertEqual(parse_profile(profile).email, 'foo@bar.com')
+
+    def test_challenge_15_unpad(self):
+        self.assertEqual(unpad(b"ICE ICE BABY\x04\x04\x04\x04"), b'ICE ICE BABY')
+        self.assertRaises(ValueError, unpad, b"ICE ICE BABY\x05\x05\x05\x05")
+        self.assertRaises(ValueError, unpad, b"ICE ICE BABY\x01\x02\x03\x04")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

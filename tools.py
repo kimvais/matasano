@@ -114,6 +114,9 @@ def pkcs7pad(data, blocksize):
 
 
 def unpad(plain):
+    padding = plain[-plain[-1]:]
+    if len(set(padding)) != 1:
+        raise ValueError('Invalid padding: {}'.format(padding))
     return plain[:-plain[-1]]
 
 
