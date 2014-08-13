@@ -28,7 +28,7 @@ def xorwith_char(data, char):
 
 def english_freq(input):
     FREQ = [ord(x) for x in 'ETAOIN SHRDLU']
-    MSG_CHARS = string.ascii_uppercase + string.digits + ".,- '"
+    MSG_CHARS = string.ascii_uppercase + string.digits + ".,- '\n"
     data = binascii.unhexlify(input)
     freqs = Counter(data)
     most_common = (x[0] for x in freqs.most_common(13))
@@ -39,7 +39,7 @@ def english_freq(input):
         output = xorwith_char(data, char)
         if all(chr(c) in MSG_CHARS for c in output.upper()):
             res.append(output)
-    return res
+    return res if res else None
 
 
 
@@ -56,6 +56,18 @@ class TestSet1(unittest.TestCase):
                           '746865206b696420646f6e277420706c6179')
 
     def test_freq(self):
-        plaintext = english_freq('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
-        self.assertIsNotNone(plaintext)
-        logger.warn('Decrypted: {}'.format(plaintext))
+        candidates = english_freq('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
+        self.assertEqual(len(candidates), 1)
+        logger.warn('Decrypted: {}'.format(candidates[0]))
+
+    def test_4(self):
+        results = list()
+        with open('4.txt') as f:
+            for line in f:
+                candidates = english_freq(line.strip())
+                if candidates:
+                    results.extend(candidates)
+        self.assertEqual(len(results), 1)
+        logger.warn('Decrypted: {}'.format(results[0]))
+
+
