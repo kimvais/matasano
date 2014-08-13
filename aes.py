@@ -1,9 +1,16 @@
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-from tools import chunk_into, xor_with_key, pkcs7pad, unpad
+from base64 import b64decode
 import random
 import os
 
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
+from tools import chunk_into, xor_with_key, pkcs7pad, unpad
+
+SUFFIX = b64decode("""Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
+aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
+dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
+YnkK""")
 
 class ECB(object):
     def __init__(self, key):
@@ -57,3 +64,8 @@ def encryption_oracle(input):
     else:
         cipher = CBC(key, os.urandom(16))
     return cipher.encrypt(plain)
+
+
+def deterministic_oracle(input):
+    key = b'YELLOW SUBMARINE'
+    return (ECB(key).encrypt(input + SUFFIX))

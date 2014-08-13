@@ -1,11 +1,13 @@
 from base64 import b64decode
 import unittest
-import binascii
 import logging
+
+import binascii
 import aes
 from set1 import challenge_6
-
+from set2 import challenge_12
 from tools import hex2base64, xorwith, english_freq, xor_with_key, hamming, chunk_into, pkcs7pad, unpad
+
 
 KEY = b'YELLOW SUBMARINE'
 
@@ -73,6 +75,7 @@ I go crazy when I hear a cymbal"""
     def test_challenge_6(self):
         self.assertEqual(PLAINTEXT, challenge_6())
 
+
 class TestSet2(unittest.TestCase):
     def test_challenge_9(self):
         """
@@ -92,7 +95,18 @@ class TestSet2(unittest.TestCase):
         with open('10.txt') as f:
             data = b64decode(f.read())
         c = aes.CBC(KEY, b'\x00' * 16)
-        self.assertEqual(unpad(c.decrypt(data)), PLAINTEXT)
+        self.assertEqual(c.decrypt(data), PLAINTEXT)
+
+    def test_challenge_10_twoway(self):
+        e = aes.CBC(KEY, b'\x00' * 16)
+        d = aes.CBC(KEY, b'\x00' * 16)
+        x = e.encrypt(b"foobar" * 123)
+        self.assertEqual(d.decrypt(x), b'foobar' * 123)
+
+    def test_challenge_12(self):
+        cracked = challenge_12()
+        plaintext = aes.SUFFIX
+        self.assertEqual(cracked, plaintext)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
