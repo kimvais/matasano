@@ -1,9 +1,10 @@
 from base64 import b64decode
 import base64
 import logging
+import string
 
 import math
-from aes import encryption_oracle, deterministic_oracle, ECB
+from aes import encryption_oracle, deterministic_oracle, ECB, C14Oracle
 from tools import chunk_into, unpad, UserProfile, pkcs7pad
 
 
@@ -103,11 +104,40 @@ def challenge_13():
             chunks[-1] = paste
             return parse_profile(b''.join(chunks)).items()
 
+
 def challenge_14():
-    raise NotImplemented("TODO")
+    oracle = C14Oracle()
+    minimal_ct = oracle(b'')
+    min_len = len(minimal_ct)
+    for i in range(16):
+        if len(oracle(b'x' * i)) > min_len:
+            break
+    x = i + 16
+    for i in range(16 * 3):
+        ct = oracle(b'x' * i)
+        chunks = chunk_into(ct, 16)
+        if len(chunks) > len(set(chunks)):
+            y = i - 16
+            break
+    logger.info(chunk_into(oracle(b'x' * x), 16))
+    chunks = chunk_into(oracle(b'x' * (x + 1)), 16)
+    logger.info(chunks)
+    gold = chunks[-1]
+    for c in string.printable:
+        plain = y * b'x' + pkcs7pad(bytes(c, 'ascii'), 16)
+        ct = oracle(plain)
+        for i, chunk in enumerate(chunk_into(ct, 16)):
+            if chunk == gold:
+                logger.fatal('last letter: {}'.format(c))
+                logger.fatal(chunks)
+                logger.fatal(chunk)
+                logger.fatal(gold)
+                return
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    print(challenge_11())
-    print(challenge_12())
-    print(challenge_13())
+    #print(challenge_11())
+    #print(challenge_12())
+    #print(challenge_13())
+    print(challenge_14())
