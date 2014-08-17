@@ -109,34 +109,38 @@ def challenge_14():
     oracle = C14Oracle()
     minimal_ct = oracle(b'')
     min_len = len(minimal_ct)
-    for i in range(16):
+    for i in range(32):
         if len(oracle(b'x' * i)) > min_len:
             break
-    x = i + 16
-    for i in range(16 * 3):
-        ct = oracle(b'x' * i)
-        chunks = chunk_into(ct, 16)
-        if len(chunks) > len(set(chunks)):
-            y = i - 16
-            break
-    logger.info(chunk_into(oracle(b'x' * x), 16))
-    chunks = chunk_into(oracle(b'x' * (x + 1)), 16)
-    logger.info(chunks)
-    gold = chunks[-1]
-    for c in string.printable:
-        plain = y * b'x' + pkcs7pad(bytes(c, 'ascii'), 16)
-        ct = oracle(plain)
-        for i, chunk in enumerate(chunk_into(ct, 16)):
-            if chunk == gold:
-                logger.fatal('last letter: {}'.format(c))
-                logger.fatal(chunks)
-                logger.fatal(chunk)
-                logger.fatal(gold)
-                return
+    logger.debug('Minimal padding: {}'.format(i))
+    x = i + 17
+    # for i in range(16 * 3):
+    #     ct = oracle(b'x' * i)
+    #     chunks = chunk_into(ct, 16)
+    #     if len(chunks) > len(set(chunks)):
+    #         y = i - 16
+    #         break
+    known = list()
+    while x:
+        chunks = chunk_into(oracle(b'x' * x), 16)
+        gold = chunks[-1]
+        for c in string.printable:
+            char = bytes(c, 'ascii')
+            plain = (x - 3) * b'x' + pkcs7pad(char, 16)
+            ct = oracle(plain)
+            chunks = chunk_into(ct, 16)
+            # for i, chunk in enumerate(chunks):
+            if gold == chunks[-2]:
+                logger.debug(chunks)
+                logger.debug(gold)
+                logger.info('last letter: {}'.format(char))
+                known.append(char)
+                x = False
+                break
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s.%(funcName)s:[%(lineno)s]: %(message)s')
     #print(challenge_11())
     #print(challenge_12())
     #print(challenge_13())
