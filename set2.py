@@ -1,9 +1,9 @@
 from base64 import b64decode
 import base64
 import logging
-import string
 
 import math
+import string
 from aes import encryption_oracle, deterministic_oracle, ECB, C14Oracle
 from tools import chunk_into, unpad, UserProfile, pkcs7pad
 
@@ -11,10 +11,11 @@ from tools import chunk_into, unpad, UserProfile, pkcs7pad
 __author__ = 'kimvais'
 
 logger = logging.getLogger(__name__)
+BLOCKSIZE = 16
 
 
 def analyze(plain, chunk_count):
-    analyzed = len(set(chunk_into(encryption_oracle(plain), 16)))
+    analyzed = len(set(chunk_into(encryption_oracle(plain), BLOCKSIZE)))
     if chunk_count > analyzed:
         return 'ECB'
     else:
@@ -23,7 +24,7 @@ def analyze(plain, chunk_count):
 
 def challenge_11():
     plain = b'foobar' * 20
-    chunk_count = math.ceil(len(plain) / 16)
+    chunk_count = math.ceil(len(plain) / BLOCKSIZE)
     for _ in range(50):
         print(analyze(plain, chunk_count))
 
@@ -91,15 +92,15 @@ def parse_profile(ciphertext):
 
 def challenge_13():
     min_len = len(profile_for(''))
-    for i in range(16):
+    for i in range(BLOCKSIZE):
         if len(profile_for('x' * i)) > min_len:
             break
     spacing = i
-    chunks = chunk_into(profile_for(spacing * b'x' + pkcs7pad(b'admin', 16)), 16)
-    cut = chunk_into(profile_for(spacing * b'x' + pkcs7pad(b'user', 16)), 16)[1]
+    chunks = chunk_into(profile_for(spacing * b'x' + pkcs7pad(b'admin', BLOCKSIZE)), BLOCKSIZE)
+    cut = chunk_into(profile_for(spacing * b'x' + pkcs7pad(b'user', BLOCKSIZE)), BLOCKSIZE)[1]
     paste = chunks[1]
-    for i in range(16):
-        chunks = chunk_into(profile_for(i * b'x'), 16)
+    for i in range(BLOCKSIZE):
+        chunks = chunk_into(profile_for(i * b'x'), BLOCKSIZE)
         if chunks[-1] == cut:
             chunks[-1] = paste
             return parse_profile(b''.join(chunks)).items()
@@ -110,51 +111,54 @@ def challenge_14():
     minimal_ct = oracle(b'')
     min_len = len(minimal_ct)
     logger.info("CT with empty payload {}: {}".format(min_len, minimal_ct))
-    prev_chunks = None
-    header_len = 0
-    for i in range(min_len):
-        ciphertext = oracle(b'x' * i)
-        chunks = chunk_into(ciphertext, 16)
-        if prev_chunks is not None and not header_len:
-            if prev_chunks[0] == chunks[0]:
-                header_len = i - 1
-                logger.critical("Header length: {0}".format(header_len))
-        prev_chunks = chunks
-        logger.info("Oracle returned: {}".format(chunks))
-        if len(ciphertext) > min_len:
-            break
-
-    logger.info(chunk_into(oracle(b'x'* header_len), 16))
-    logger.info(chunk_into(oracle(b'y'* header_len), 16))
-    x = i + 1
-    logger.info('Minimal padding: {}'.format(x))
-
+    pushout = hdr = None
+    prefix_pad_to_block_boundary = 0
+    for i in range(1, BLOCKSIZE + 1):
+        pairs = zip(chunk_into(oracle(i * b'x'), BLOCKSIZE), chunk_into(oracle(i * b'y'), BLOCKSIZE))
+        chunk_equality = [a == b for a, b in pairs]
+        if hdr is None:
+            hdr = chunk_equality.index(False) + 1
+        falses = chunk_equality.count(False)
+        logger.debug('i: {}, {}'.format(i, falses))
+        logger.debug(chunk_equality)
+        if not prefix_pad_to_block_boundary and falses > 1:
+            prefix_pad_to_block_boundary = i - 1
+        if pushout is None and len(chunk_equality) > min_len / BLOCKSIZE:
+            pushout = i + 1
+    prefix_len = hdr * BLOCKSIZE - prefix_pad_to_block_boundary
+    plaintext_len = len(chunk_equality) * BLOCKSIZE - (pushout + prefix_len)
+    logger.info('Prefix len: {}'.format(prefix_len))
+    logger.info('Plaintext len: {}'.format(plaintext_len))
+    logger.info('Prefix pad to block boundary: {}'.format(prefix_pad_to_block_boundary))
+    discard = hdr * BLOCKSIZE
     known = list()
-    while x:
-        chunks = chunk_into(oracle(b'x' * x + b''.join(known)), 16)
-        gold = chunks[-1]
+    logger.info('Push out: {}'.format(pushout))
+    goldindex = min_len
+    while len(known) < plaintext_len:
+        insert = (len(known) + pushout) * b'x'
+        ct = oracle(insert)
+        gold = ct[goldindex:]
+        logger.info(gold)
         for c in string.printable:
-            char = bytes(c, 'ascii')
-            plain = (x - 3) * b'x' + pkcs7pad(b''.join(known) + char, 16)
-            ct = oracle(plain)
-            chunks = chunk_into(ct, 16)
-            # for i, chunk in enumerate(chunks):
-            if gold == chunks[-2]:
-                logger.debug(chunks)
-                logger.debug(gold)
-                logger.info('found previous: {}'.format(char))
+            char = bytes((ord(c),))
+            filler = prefix_pad_to_block_boundary * b'x'
+            plaintext = pkcs7pad(char + b''.join(known), BLOCKSIZE)
+            l = len(plaintext)
+            compare_to = oracle(filler + plaintext)
+            # assert len(compare_to) == len(gold)
+            # logger.info(compare_to)
+            if gold in compare_to:
                 known.insert(0, char)
-                logger.info(known)
-                x -= 1
                 break
-        else:
-            logger.fatal("No match")
-            return
+            logger.info(known)
+
+    return known
+
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s.%(funcName)s:[%(lineno)s]: %(message)s')
-    #print(challenge_11())
+    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s.%(funcName)s:[%(lineno)s]: %(message)s')
+    # print(challenge_11())
     #print(challenge_12())
     #print(challenge_13())
     print(challenge_14())

@@ -1,3 +1,4 @@
+import logging
 import random
 import os
 
@@ -7,6 +8,7 @@ from cryptography.hazmat.backends import default_backend
 from tools import chunk_into, xor_with_key, pkcs7pad, unpad
 
 
+logger = logging.getLogger(__name__)
 class ECB(object):
     def __init__(self, key):
         self.cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
@@ -66,10 +68,11 @@ def deterministic_oracle(input, suffix):
     return (ECB(key).encrypt(input + suffix))
 
 class C14Oracle(object):
-    def __init__(self, secret=b'panssari-vaunu'):
+    def __init__(self, secret=b'password:panssari-vaunu'):
         self.secret = secret
         self.key = b'YELLOW SUBMARINE'
         self.prefix = os.urandom(random.randint(1, 128))
+        logger.info(len(self.prefix))
 
     def __call__(self, input, *args, **kwargs):
         plain = self.prefix + input + self.secret
