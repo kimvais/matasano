@@ -109,34 +109,47 @@ def challenge_14():
     oracle = C14Oracle()
     minimal_ct = oracle(b'')
     min_len = len(minimal_ct)
-    for i in range(32):
-        if len(oracle(b'x' * i)) > min_len:
+    logger.info("CT with empty payload {}: {}".format(min_len, minimal_ct))
+    prev_chunks = None
+    header_len = 0
+    for i in range(min_len):
+        ciphertext = oracle(b'x' * i)
+        chunks = chunk_into(ciphertext, 16)
+        if prev_chunks is not None and not header_len:
+            if prev_chunks[0] == chunks[0]:
+                header_len = i - 1
+                logger.critical("Header length: {0}".format(header_len))
+        prev_chunks = chunks
+        logger.info("Oracle returned: {}".format(chunks))
+        if len(ciphertext) > min_len:
             break
-    logger.debug('Minimal padding: {}'.format(i))
-    x = i + 17
-    # for i in range(16 * 3):
-    #     ct = oracle(b'x' * i)
-    #     chunks = chunk_into(ct, 16)
-    #     if len(chunks) > len(set(chunks)):
-    #         y = i - 16
-    #         break
+
+    logger.info(chunk_into(oracle(b'x'* header_len), 16))
+    logger.info(chunk_into(oracle(b'y'* header_len), 16))
+    x = i + 1
+    logger.info('Minimal padding: {}'.format(x))
+
     known = list()
     while x:
-        chunks = chunk_into(oracle(b'x' * x), 16)
+        chunks = chunk_into(oracle(b'x' * x + b''.join(known)), 16)
         gold = chunks[-1]
         for c in string.printable:
             char = bytes(c, 'ascii')
-            plain = (x - 3) * b'x' + pkcs7pad(char, 16)
+            plain = (x - 3) * b'x' + pkcs7pad(b''.join(known) + char, 16)
             ct = oracle(plain)
             chunks = chunk_into(ct, 16)
             # for i, chunk in enumerate(chunks):
             if gold == chunks[-2]:
                 logger.debug(chunks)
                 logger.debug(gold)
-                logger.info('last letter: {}'.format(char))
-                known.append(char)
-                x = False
+                logger.info('found previous: {}'.format(char))
+                known.insert(0, char)
+                logger.info(known)
+                x -= 1
                 break
+        else:
+            logger.fatal("No match")
+            return
 
 
 if __name__ == '__main__':

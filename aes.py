@@ -65,8 +65,12 @@ def deterministic_oracle(input, suffix):
     key = b'YELLOW SUBMARINE'
     return (ECB(key).encrypt(input + suffix))
 
+class C14Oracle(object):
+    def __init__(self, secret=b'panssari-vaunu'):
+        self.secret = secret
+        self.key = b'YELLOW SUBMARINE'
+        self.prefix = os.urandom(random.randint(1, 128))
 
-def c14_oracle(input):
-    key = b'YELLOW SUBMARINE'
-    prefix = os.urandom(random.randint(1, 32))
-    return ECB(key).encrypt(prefix + input + 'password:panssari-vaunu')
+    def __call__(self, input, *args, **kwargs):
+        plain = self.prefix + input + self.secret
+        return ECB(self.key).encrypt(pkcs7pad(plain, 16))
