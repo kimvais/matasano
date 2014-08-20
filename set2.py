@@ -66,7 +66,7 @@ def challenge_12():
         try:
             known.append(rtable[ciphertext[:datalen]])
         except KeyError:
-            return (unpad(b''.join(known)))
+            return unpad(b''.join(known))
 
 
 def kvparse(data):
@@ -161,11 +161,11 @@ def c15_enc(data):
     assert isinstance(data, bytes)
     assert b';' not in data
     assert b'=' not in data
-    HEADER = b'comment1=cooking%20MCs;userdata='
-    TRAILER = b';comment2=%20like%20a%20pound%20of%20bacon'
+    header = b'comment1=cooking%20MCs;userdata='
+    trailer = b';comment2=%20like%20a%20pound%20of%20bacon'
     iv = os.urandom(16)
     c = CBC(KEY, iv)
-    return iv + c.encrypt(HEADER + data + TRAILER)
+    return iv + c.encrypt(header + data + trailer)
 
 
 def c15_dec(data):

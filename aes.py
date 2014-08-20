@@ -53,11 +53,11 @@ class CBC(object):
         return b''.join(ciphertext)
 
 
-def encryption_oracle(input):
+def encryption_oracle(data):
     key = os.urandom(16)
     prefixlen = random.randint(5, 10)
     suffixlen = random.randint(5, 10)
-    plain = os.urandom(prefixlen) + input + os.urandom(suffixlen)
+    plain = os.urandom(prefixlen) + data + os.urandom(suffixlen)
     if random.getrandbits(1):
         cipher = ECB(key)
     else:
@@ -65,9 +65,9 @@ def encryption_oracle(input):
     return cipher.encrypt(plain)
 
 
-def deterministic_oracle(input, suffix):
+def deterministic_oracle(data, suffix):
     key = b'YELLOW SUBMARINE'
-    return (ECB(key).encrypt(input + suffix))
+    return ECB(key).encrypt(data + suffix)
 
 
 class C14Oracle(object):
@@ -77,6 +77,6 @@ class C14Oracle(object):
         self.prefix = os.urandom(random.randint(1, 128))
         logger.info(len(self.prefix))
 
-    def __call__(self, input, *args, **kwargs):
-        plain = self.prefix + input + self.secret
+    def __call__(self, data, *args, **kwargs):
+        plain = self.prefix + data + self.secret
         return ECB(self.key).encrypt(pkcs7pad(plain, 16))

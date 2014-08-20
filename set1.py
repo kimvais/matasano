@@ -22,7 +22,7 @@ def challenge_6():
             hscore = hamming(a, b)
             logger.debug(hscore)
             score += hscore / keysize
-        score = score / 4
+        score /= 4
         keysize_candidates.append((keysize, score))
     keysize_probability = sorted(keysize_candidates, key=lambda x: x[1])
     logger.info("Probable keysizes: {}".format(keysize_probability[:5]))
@@ -31,9 +31,9 @@ def challenge_6():
         logger.debug(keysize)
         chunks = chunk_into(data, keysize)
         transposed = zip(*chunks[:-1])
-        for x in transposed:
+        for c in transposed:
             try:
-                _, key_int = english_freq(bytes(x))
+                _, key_int = english_freq(bytes(c))
                 key_ints.append(key_int)
             except TypeError:
                 break

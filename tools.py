@@ -4,7 +4,6 @@ import string
 import logging
 
 import math
-
 import binascii
 
 
@@ -13,20 +12,21 @@ logger = logging.getLogger(__name__)
 __author__ = 'kimvais'
 
 
-def hex2base64(input):
-    return base64.b64encode(binascii.unhexlify(input))
+def hex2base64(data):
+    return base64.b64encode(binascii.unhexlify(data))
 
 
-def xorwith(input, key):
-    return '{:0x}'.format(int(input, 16) ^ int(key, 16))
+def xorwith(data, key):
+    return '{:0x}'.format(int(data, 16) ^ int(key, 16))
+
 
 def xorwith_char(data, char):
     output = bytes(bytearray((a ^ char) for a in data))
     return output
 
 
-def english_freq(input, min_score=3):
-    FREQUENCIES = {'e': 12.02,
+def english_freq(data, min_score=3):
+    frequencies = {'e': 12.02,
                    't': 9.10,
                    'a': 8.12,
                    'o': 7.68,
@@ -53,10 +53,10 @@ def english_freq(input, min_score=3):
                    'q': 0.11,
                    'j': 0.10,
                    'z': 0.07}
-    if not isinstance(input, (bytes, bytearray)):
-        data = binascii.unhexlify(input)
+    if not isinstance(data, (bytes, bytearray)):
+        data = binascii.unhexlify(data)
     else:
-        data = input
+        data = data
     candidate = None
     best = min_score
     for char in range(256):
@@ -66,7 +66,7 @@ def english_freq(input, min_score=3):
         if not all(chr(c) in string.printable for c in histogram):
             continue
         score = 0
-        for k, v in FREQUENCIES.items():
+        for k, v in frequencies.items():
             score += freqs[ord(k)] * v
         score = score / len(output)
         if score > best:
@@ -76,9 +76,9 @@ def english_freq(input, min_score=3):
     return candidate
 
 
-def xor_with_key(input, key):
+def xor_with_key(data, key):
     output = bytearray()
-    for i, c in enumerate(input):
+    for i, c in enumerate(data):
         key_idx = i % len(key)
         output.append(key[key_idx] ^ c)
     return bytes(output)
@@ -92,8 +92,8 @@ def hamming(a, b):
     :return: int()
     """
     assert len(a) == len(b)
-    c = Counter()
     distances = (x ^ y for x, y in zip(a, b))
+    c = Counter()
     for x in distances:
         c.update(bin(x).lstrip('0b'))
     return c['1']
