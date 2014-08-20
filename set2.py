@@ -1,9 +1,9 @@
 from base64 import b64decode
 import base64
 import logging
+import string
 
 import math
-import string
 from aes import encryption_oracle, deterministic_oracle, ECB, C14Oracle
 from tools import chunk_into, unpad, UserProfile, pkcs7pad
 
@@ -126,11 +126,12 @@ def challenge_14():
         if pushout is None and len(chunk_equality) > min_len / BLOCKSIZE:
             pushout = i + 1
     prefix_len = hdr * BLOCKSIZE - prefix_pad_to_block_boundary
-    plaintext_len = len(chunk_equality) * BLOCKSIZE - (pushout + prefix_len)
+    plaintext_len = min_len - prefix_len - pushout + 1
+    discard = hdr * BLOCKSIZE
     logger.info('Prefix len: {}'.format(prefix_len))
     logger.info('Plaintext len: {}'.format(plaintext_len))
     logger.info('Prefix pad to block boundary: {}'.format(prefix_pad_to_block_boundary))
-    discard = hdr * BLOCKSIZE
+    logger.info('Discard: {}'.format(discard))
     known = list()
     logger.info('Push out: {}'.format(pushout))
     goldindex = min_len
@@ -138,27 +139,24 @@ def challenge_14():
         insert = (len(known) + pushout) * b'x'
         ct = oracle(insert)
         gold = ct[goldindex:]
-        logger.info(gold)
         for c in string.printable:
             char = bytes((ord(c),))
             filler = prefix_pad_to_block_boundary * b'x'
             plaintext = pkcs7pad(char + b''.join(known), BLOCKSIZE)
-            l = len(plaintext)
-            compare_to = oracle(filler + plaintext)
+            compare_to = oracle(filler + plaintext)[discard:]
             # assert len(compare_to) == len(gold)
             # logger.info(compare_to)
-            if gold in compare_to:
+            if compare_to.startswith(gold):
                 known.insert(0, char)
                 break
-            logger.info(known)
+            logger.debug(known)
 
-    return known
-
+    return b''.join(known)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s.%(funcName)s:[%(lineno)s]: %(message)s')
-    # print(challenge_11())
-    #print(challenge_12())
-    #print(challenge_13())
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s.%(funcName)s:[%(lineno)s]: %(message)s')
+    print(challenge_11())
+    print(challenge_12())
+    print(challenge_13())
     print(challenge_14())

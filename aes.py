@@ -9,6 +9,8 @@ from tools import chunk_into, xor_with_key, pkcs7pad, unpad
 
 
 logger = logging.getLogger(__name__)
+
+
 class ECB(object):
     def __init__(self, key):
         self.cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
@@ -66,6 +68,7 @@ def encryption_oracle(input):
 def deterministic_oracle(input, suffix):
     key = b'YELLOW SUBMARINE'
     return (ECB(key).encrypt(input + suffix))
+
 
 class C14Oracle(object):
     def __init__(self, secret=b'password:panssari-vaunu'):
