@@ -1,12 +1,15 @@
 from base64 import b64decode
 import base64
 import logging
+import os
 import string
 
 import math
-from aes import encryption_oracle, deterministic_oracle, ECB, C14Oracle
-from tools import chunk_into, unpad, UserProfile, pkcs7pad
+from aes import encryption_oracle, deterministic_oracle, ECB, C14Oracle, CBC
+from tools import chunk_into, unpad, UserProfile, pkcs7pad, xor_with_key
 
+
+KEY = b'YELLOW SUBMARINE'
 
 __author__ = 'kimvais'
 
@@ -66,8 +69,8 @@ def challenge_12():
             return (unpad(b''.join(known)))
 
 
-def kvparse(input):
-    d = dict(x.split(b'=') for x in input.split(b'&'))
+def kvparse(data):
+    d = dict(x.split(b'=') for x in data.split(b'&'))
     return UserProfile(d)
 
 
@@ -154,9 +157,62 @@ def challenge_14():
     return b''.join(known)
 
 
+def c15_enc(data):
+    assert isinstance(data, bytes)
+    assert b';' not in data
+    assert b'=' not in data
+    HEADER = b'comment1=cooking%20MCs;userdata='
+    TRAILER = b';comment2=%20like%20a%20pound%20of%20bacon'
+    iv = os.urandom(16)
+    c = CBC(KEY, iv)
+    return iv + c.encrypt(HEADER + data + TRAILER)
+
+
+def c15_dec(data):
+    iv = data[:16]
+    ct = data[16:]
+    c = CBC(KEY, iv)
+    plain = c.decrypt(ct)
+    logger.debug(plain)
+    return plain
+
+
+def c15_parse(data):
+    plain = c15_dec(data)
+    try:
+        return dict(x.split(b'=') for x in plain.split(b';'))
+    except ValueError:
+        return dict()
+
+
+def c15_verify(data):
+    return c15_parse(data).get(b'admin') == b'true'
+
+
+def challenge_15():
+    idxs = (0, 6, 11, 13)
+    flipper = bytearray(16)
+    inject = b':admin<true:x<'
+    for i in idxs:
+        flipper[i] = 1
+    for i in range(0, BLOCKSIZE):
+        ct = c15_enc(b'x' * i + inject)
+        paste = xor_with_key(ct[32:48], flipper)
+        new_ct = ct[:32] + paste + ct[48:]
+        if c15_verify(new_ct):
+            return True
+    else:
+        logger.fatal('Bitflip attack failed')
+
+    ct = c15_enc(inject)
+
+    return c15_verify(ct)
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s.%(funcName)s:[%(lineno)s]: %(message)s')
-    print(challenge_11())
-    print(challenge_12())
-    print(challenge_13())
-    print(challenge_14())
+    # print(challenge_11())
+    # print(challenge_12())
+    # print(challenge_13())
+    # print(challenge_14())
+    print(challenge_15())

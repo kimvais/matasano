@@ -20,7 +20,6 @@ def hex2base64(input):
 def xorwith(input, key):
     return '{:0x}'.format(int(input, 16) ^ int(key, 16))
 
-
 def xorwith_char(data, char):
     output = bytes(bytearray((a ^ char) for a in data))
     return output
@@ -110,6 +109,8 @@ def chunk_into(data, size):
 def pkcs7pad(data, blocksize):
     assert isinstance(data, bytes)
     padlen = blocksize - len(data) % blocksize
+    if padlen == 0:
+        padlen = blocksize
     return data + padlen * bytes((padlen,))
 
 
