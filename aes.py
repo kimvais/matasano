@@ -1,12 +1,15 @@
 import logging
 import random
 import os
+import struct
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
 from tools import chunk_into, xor_with_key, pkcs7pad, unpad
 
+
+BLOCKSIZE = 16
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,24 @@ class CBC(object):
             ciphertext.append(cipherblock)
             self._state = cipherblock
         return b''.join(ciphertext)
+
+
+class CTR(object):
+    def __init__(self, key, nonce=0):
+        self.key = key
+        self.nonce = nonce
+        self.counter = 0
+        self.cipher = ECB(self.key)
+
+    def encrypt(self, data):
+        ret = list()
+        blocks = chunk_into(data, BLOCKSIZE)
+        for i, block in enumerate(blocks):
+            _ks = self.cipher.encrypt(struct.pack('<2Q', self.nonce, i))
+            logger.debug(block)
+            logger.debug(_ks)
+            ret.append(xor_with_key(block, _ks))
+        return b''.join(ret)
 
 
 def encryption_oracle(data):
