@@ -2,7 +2,7 @@ import base64
 import logging
 
 import aes
-from tools import english_freq, xor_with_key, pkcs7pad
+from tools import english_freq, xor_with_key
 
 
 __author__ = 'kimvais'
@@ -53,10 +53,14 @@ def encrypt():
 
 
 def main():
+    """
+    This actually solves Challenge 19 as Challenge 20 is meant to be solved.
+    Deal with it :D
+
+    :return:
+    """
     ciphertexts = encrypt()
     l = len(max(ciphertexts, key=len))
-    piecemeal = [bytes(x) for x in zip(*ciphertexts)]
-    logger.debug(piecemeal)
     keystream = list()
     for x in range(l):
         z = bytes(ct[x] for ct in ciphertexts if len(ct) > x)
